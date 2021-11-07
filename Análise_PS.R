@@ -124,7 +124,7 @@ json_data <- fromJSON(paste(readLines(json_file), collapse=""))
 # Obtendo uma lista de todos os recursos
 print(json_data$resources$name)
 
-# Imprimindo todos os dados tabulares (se houver)
+# Imprimindo todos os dados tabulares 
 for(i in 1:length(json_data$resources$datahub$type)){
   if(json_data$resources$datahub$type[i]=='derived/csv'){
     path_to_file = json_data$resources$path[i]
@@ -185,11 +185,8 @@ view(A)
 A <- A[!is.na(A$Height),]
 A <- A[!is.na(A$Weight),] 
 
-# Tirando as repetições dos nomes, para não ter IMC repetido
-correto <- A %>% distinct(Name)
-
 # Criando um arquivo apenas com as variáveis que serão utilizadas para a fórmula
-calculo <- correto %>% select("Weight","Height","Game")
+calculo <- A %>% select("Weight","Height","Game")
 
 # Colocando as alturas em metros ( estavam em centímetros) 
 calculo["Altura"] <- (calculo$Height/100)  
@@ -218,7 +215,7 @@ theme(plot.title = element_text(hjust = 0.5))
 # Salvando o gráfico
 ggsave("box2.pdf",width=158, height = 93, units = "mm")
 
-# Dados para a construção da tabela-resumo
+# Dados para a construção do quadro com as medidas-resumo
 verao <- fim %>% filter(Game == "Verão")
 summary(verao$IMC)
 
@@ -227,19 +224,25 @@ summary(inverno$IMC)
 
 ## Preparação dos dados para a quinta análise ## 
 
+# Utilizando o banco de dados original
+dados <- read.csv("athlete_events.csv", sep = ",")
+
 # Colocando peso 3 na medalha de ouro, 2 na de prata e 1 na de bronze
-A$Medal[A$Medal == "Gold"] <- 3
-A$Medal[A$Medal == "Silver"] <- 2
-A$Medal[A$Medal == "Bronze"] <- 1
+dados$Medal[dados$Medal == "Gold"] <- 3
+dados$Medal[dados$Medal == "Silver"] <- 2
+dados$Medal[dados$Medal == "Bronze"] <- 1
 
 # A variável medalha está como character, irei transformá-la em numérica
-A$Medal <- as.numeric(as.character(A$Medal))
+dados$Medal <- as.numeric(as.character(dados$Medal))
 
 # Verificando o tipo de variável
-glimpse(A$Medal)
+glimpse(dados$Medal)
 
 # Selecionando as variáveis Nome e peso das medalhas
-pesos2 <- A %>% select(Name,Medal)
+pesos2 <- dados %>% select(Name,Medal)
+
+# Retirando os missing values das medalhas
+pesos2 <- pesos2[!is.na(pesos2$Medal),]
 
 # Contabilizando os "pontos" por jogador e somando o valor dos pesos
 quinta <- pesos2 %>% 
@@ -256,7 +259,7 @@ quinta <-quinta[1:5,]
 
 # Construção do gráfico de barras
 ggplot(quinta) +
-  aes(x = Valor, y = fct_reorder(Name,Valor, .desc=T),label = Valor)+
+  aes(x = Valor, y = fct_reorder(Name,Valor, .desc=F),label = Valor)+
   geom_bar(stat = "identity", fill = "#A11D21", width = 0.7) +
   geom_text(
     position = position_dodge(width = .9),
